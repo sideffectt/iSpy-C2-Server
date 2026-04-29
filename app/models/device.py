@@ -3,7 +3,7 @@ Device Model
 Represents connected iOS devices
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def create_device_model(db):
@@ -15,8 +15,8 @@ def create_device_model(db):
         id = db.Column(db.Integer, primary_key=True)
         device_name = db.Column(db.String(100), unique=True, nullable=False)
         ip_address = db.Column(db.String(50))
-        last_seen = db.Column(db.DateTime, default=datetime.utcnow)
-        first_seen = db.Column(db.DateTime, default=datetime.utcnow)
+        last_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+        first_seen = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
         is_active = db.Column(db.Boolean, default=True)
         
         # Device info
@@ -24,6 +24,7 @@ def create_device_model(db):
         system_name = db.Column(db.String(50))
         system_version = db.Column(db.String(20))
         is_jailbroken = db.Column(db.Boolean, default=False)
+        notes = db.Column(db.Text, default='')
         
         # Relationships
         logs = db.relationship('Log', backref='device', lazy='dynamic')
@@ -46,7 +47,7 @@ def create_device_model(db):
             }
         
         def update_last_seen(self):
-            self.last_seen = datetime.utcnow()
+            self.last_seen = datetime.now(timezone.utc)
         
         def update_info(self, info: dict):
             """Update device info from identify payload"""

@@ -52,34 +52,30 @@ def create_app():
         engineio_logger=False
     )
     
-    admin.init_app(app)
-    
+    from app.routes.admin import C2AdminIndexView
+    admin.init_app(app, index_view=C2AdminIndexView(name='Dashboard', url='/admin'))
+
     # Initialize rate limiter
     limiter = init_limiter(app)
-    
-    # Apply rate limit to auth endpoint
-    from app.routes.api import api_bp
-    
-    @limiter.limit("5 per minute")
-    def limit_auth():
-        pass
-    
+
     # Initialize models
     from app.models import init_models
     models = init_models(db)
     Device = models['Device']
     Log = models['Log']
-    
+
     # Make models globally accessible
     app.Device = Device
     app.Log = Log
-    
-    # Add admin views with custom templates
+
+    # Add admin views
     from app.routes.admin import DeviceModelView, LogModelView
     admin.add_view(DeviceModelView(Device, db.session, name='Devices', endpoint='device'))
     admin.add_view(LogModelView(Log, db.session, name='Logs', endpoint='log'))
-    
+
     # Register blueprints
+    from app.routes.api import api_bp
+    
     app.register_blueprint(api_bp)
     
     # Initialize socket handlers

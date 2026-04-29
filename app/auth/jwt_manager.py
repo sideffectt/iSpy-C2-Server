@@ -4,7 +4,7 @@ Handles token generation and verification
 """
 
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict
 from app.config import get_config
 from app.utils import logger, log_auth_attempt
@@ -25,8 +25,8 @@ def generate_token(device_id: str) -> str:
     
     payload = {
         'device_id': device_id,
-        'iat': datetime.utcnow(),
-        'exp': datetime.utcnow() + timedelta(hours=config.JWT_EXPIRY_HOURS)
+        'iat': datetime.now(timezone.utc),
+        'exp': datetime.now(timezone.utc) + timedelta(hours=config.JWT_EXPIRY_HOURS)
     }
     
     token = jwt.encode(
@@ -75,18 +75,12 @@ def get_token_expiry() -> int:
 def refresh_token(old_token: str) -> Optional[str]:
     """
     Refresh an existing token (if still valid)
-    
-    Args:
-        old_token: Current JWT token
-        
-    Returns:
-        New JWT token if old one is valid, None otherwise
     """
-    
     payload = verify_token(old_token)
     
     if payload:
         device_id = payload.get('device_id')
-        return generate_token(device_id)
+        if device_id:
+            return generate_token(device_id)
     
     return None

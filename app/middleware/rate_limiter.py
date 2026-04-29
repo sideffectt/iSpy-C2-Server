@@ -3,11 +3,12 @@ Rate Limiting Middleware
 Prevents brute force attacks
 """
 
+from typing import Optional
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from app.utils import logger
 
-limiter = None
+limiter: Optional[Limiter] = None
 
 
 def init_limiter(app):
@@ -19,7 +20,7 @@ def init_limiter(app):
         app=app,
         key_func=get_remote_address,
         default_limits=["60 per minute"],
-        storage_uri="memory://"
+        storage_uri="memory://"  # Use Redis URI (e.g. redis://localhost:6379) in production
     )
     
     # Custom error handler
@@ -34,6 +35,6 @@ def init_limiter(app):
     return limiter
 
 
-def get_limiter():
+def get_limiter() -> Optional[Limiter]:
     """Get the limiter instance"""
     return limiter

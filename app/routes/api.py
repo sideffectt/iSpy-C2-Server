@@ -25,6 +25,16 @@ def health():
         'timestamp': datetime.now().isoformat()
     })
 
+@api_bp.route('/connected', methods=['GET'])
+def connected_devices():
+    """Get connected devices (for admin panel)"""
+    from app import get_connected_devices
+
+    devices = get_connected_devices()
+    return jsonify({
+        'devices': list(devices.values()),
+        'count': len(devices)
+    })
 
 @api_bp.route('/auth', methods=['POST'])
 def authenticate():
@@ -137,6 +147,85 @@ def send_command(device_id):
     })
 
 
+@api_bp.route('/bulk-command', methods=['POST'])
+def bulk_command():
+    """Send command to all connected (authenticated) devices"""
+    from app import get_connected_devices, send_command_to_device
+    from app.middleware import validate_command
+    from app.utils import log_command
+
+    data = request.get_json()
+    command = data.get('command')
+    params  = data.get('params', {})
+
+    if not command:
+        return jsonify({'error': 'Command is required'}), 400
+    if not validate_command(command):
+        return jsonify({'error': f'Invalid command: {command}'}), 400
+
+    devices  = get_connected_devices()
+    targets  = [d['device_id'] for d in devices.values() if d.get('authenticated') and d.get('device_id')]
+    results  = {}
+    for dev_id in targets:
+        results[dev_id] = send_command_to_device(dev_id, command, params)
+        log_command(command, dev_id, 'bulk_api')
+
+    return jsonify({'command': command, 'sent_to': len(targets), 'results': results})
+
+
+@api_bp.route('/device/<device_id>/export', methods=['GET'])
+def export_device_logs(device_id):
+    """Export device logs as CSV or JSON"""
+    import csv, io
+    from app import db, Device, Log
+
+    fmt = request.args.get('format', 'json').lower()
+    device = db.session.query(Device).filter_by(device_name=device_id).first()
+    if not device:
+        return jsonify({'error': 'Device not found'}), 404
+
+    logs = db.session.query(Log).filter_by(device_id=device.id).order_by(Log.timestamp.desc()).all()
+
+    if fmt == 'csv':
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['id', 'plugin', 'data', 'timestamp'])
+        for log in logs:
+            writer.writerow([
+                log.id, log.plugin_name, log.data,
+                log.timestamp.isoformat() if log.timestamp else ''
+            ])
+        from flask import Response
+        return Response(
+            output.getvalue(),
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename="{device_id[:20]}_logs.csv"'}
+        )
+
+    return jsonify({
+        'device_id': device_id,
+        'total': len(logs),
+        'logs': [{'id': l.id, 'plugin': l.plugin_name, 'data': l.data,
+                  'timestamp': l.timestamp.isoformat() if l.timestamp else None} for l in logs]
+    })
+
+
+@api_bp.route('/device/<device_id>/notes', methods=['POST'])
+def update_device_notes(device_id):
+    """Update device notes"""
+    from app import db, Device
+
+    data = request.get_json()
+    notes = data.get('notes', '')
+    device = db.session.query(Device).filter_by(device_name=device_id).first()
+    if not device:
+        return jsonify({'error': 'Device not found'}), 404
+
+    device.notes = notes
+    db.session.commit()
+    return jsonify({'success': True, 'device_id': device_id})
+
+
 @api_bp.route('/device/<device_id>/logs', methods=['GET'])
 @require_jwt
 def get_device_logs(device_id):
@@ -151,6 +240,8 @@ def get_device_logs(device_id):
     # Pagination
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 50, type=int)
+    if page < 1 or per_page < 1:
+        return jsonify({'error': 'page and per_page must be positive integers'}), 400
     per_page = min(per_page, 100)  # Max 100
     
     logs = db.session.query(Log)\

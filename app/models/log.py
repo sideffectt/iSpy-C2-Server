@@ -3,7 +3,7 @@ Log Model
 Stores plugin output and events from devices
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 def create_log_model(db):
@@ -16,7 +16,7 @@ def create_log_model(db):
         device_id = db.Column(db.Integer, db.ForeignKey('devices.id'), nullable=False)
         plugin_name = db.Column(db.String(100), nullable=False)
         data = db.Column(db.Text)
-        timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+        timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
         
         # Additional metadata
         is_error = db.Column(db.Boolean, default=False)

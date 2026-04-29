@@ -30,7 +30,6 @@ def print_banner():
     print(f"  JWT Expiry   : {config.JWT_EXPIRY_HOURS} hours")
     print(f"  Rate Limit   : {config.RATE_LIMIT_PER_MINUTE}/min")
     print("=" * 55)
-    print(f"  Admin: {config.ADMIN_USERNAME} / {config.ADMIN_PASSWORD}")
     print("=" * 55 + "\n")
 
 
