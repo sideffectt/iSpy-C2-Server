@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  {% block head %}
+  <title>
+    {% block title %}
+      {% if admin_view.category %}{{ admin_view.category }} · {% endif %}
+      {{ admin_view.name }} — iSpy C2
+    {% endblock %}
+  </title>
+  {% block head_meta %}
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  {% endblock %}
+  {% block head_css %}
+  <link rel="stylesheet" href="{{ url_for('admin.static', filename='bootstrap/css/bootstrap.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin.static', filename='select2/select2.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin.static', filename='admin/css/bootstrap3/general.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin.static', filename='admin/css/bootstrap3/filters.css') }}">
+  <link rel="stylesheet" href="{{ url_for('admin.static', filename='admin/css/bootstrap3/actions.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Ubuntu+Sans:wght@400;500;700&family=Ubuntu+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════
+       iSpy C2 — CHARCOAL AMBER
+    ═══════════════════════════════════════ */
+    :root {
+      --bg-void:    #0d0d0d;
+      --bg-deep:    #111111;
+      --bg-base:    #171717;
+      --bg-card:    #1d1d1d;
+      --bg-raised:  #242424;
+      --bg-hover:   #2c2c2c;
+      --bg-input:   #141414;
+
+      --border:     #272727;
+      --border-hi:  #323232;
+      --border-act: #424242;
+
+      --green:      #30d158;
+      --green-dim:  #1f8c3b;
+      --green-dark: #0b1f10;
+      --red:        #ff453a;
+      --red-dim:    #bf3028;
+      --red-dark:   #200a09;
+      --cyan:       #d4822a;
+      --cyan-dim:   #a86420;
+      --cyan-dark:  #1e1108;
+      --yellow:     #ffd60a;
+      --yellow-dark:#1c1500;
+      --purple:     #bf5af2;
+
+      --text-1:     #f2f2f2;
+      --text-2:     #8e8e93;
+      --text-3:     #48484a;
+
+      --mono:       'Ubuntu Mono', 'Courier New', monospace;
+      --ui:         'Ubuntu Sans', system-ui, sans-serif;
+      --display:    'Space Mono', 'Ubuntu Mono', monospace;
+
+      --glow-green: 0 0 8px rgba(48,209,88,0.38),  0 0 24px rgba(48,209,88,0.10);
+      --glow-red:   0 0 8px rgba(255,69,58,0.38),   0 0 24px rgba(255,69,58,0.10);
+      --glow-cyan:  0 0 8px rgba(212,130,42,0.32),  0 0 24px rgba(212,130,42,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html {
+      background-color: var(--bg-void);
+      background-image:
+        repeating-linear-gradient(
+          -45deg,
+          transparent 0px, transparent 18px,
+          rgba(48,209,88,0.028) 18px, rgba(48,209,88,0.028) 19px
+        ),
+        repeating-linear-gradient(
+           45deg,
+          transparent 0px, transparent 18px,
+          rgba(48,209,88,0.028) 18px, rgba(48,209,88,0.028) 19px
+        );
+    }
+    body {
+      background: transparent !important;
+      color: var(--text-1) !important;
+      font-family: var(--ui) !important;
+      font-size: 15px;
+      font-weight: 500;
+      min-height: 100vh;
+      padding-top: 0 !important;
+      margin-top: 0 !important;
+    }
+
+    #main-wrapper {
+      min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-void); }
+    ::-webkit-scrollbar-thumb { background: var(--border-act); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--cyan-dim); }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: rgba(8,8,8,0.98) !important;
+      border: none !important;
+      border-bottom: 1px solid var(--border-hi) !important;
+      box-shadow: 0 1px 0 rgba(212,130,42,0.08), 0 4px 24px rgba(0,0,0,0.8) !important;
+      min-height: 72px !important;
+      margin-bottom: 0 !important;
+      border-radius: 0 !important;
+      position: relative !important;
+    }
+    /* corner brackets inside navbar */
+    .navbar::before, .navbar::after {
+      content: '';
+      position: absolute;
+      top: 10px; width: 16px; height: 16px;
+      border-top: 2px solid var(--cyan);
+      opacity: 0.5;
+    }
+    .navbar::before { left: 10px;  border-left:  2px solid var(--cyan); }
+    .navbar::after  { right: 10px; border-right: 2px solid var(--cyan); }
+
+    /* centered brand — absolute so it doesn't push nav links */
+    .navbar-brand {
+      position: absolute !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      top: 0 !important;
+      height: 72px !important;
+      display: flex !important;
+      align-items: center !important;
+      padding: 0 !important;
+      color: var(--cyan) !important;
+      font-family: var(--display) !important;
+      font-size: 18px !important;
+      font-weight: 700 !important;
+      letter-spacing: 3px !important;
+      text-shadow: var(--glow-cyan) !important;
+      text-decoration: none !important;
+      white-space: nowrap !important;
+      pointer-events: auto !important;
+    }
+    .navbar-brand:hover { color: #fff !important; }
+    .navbar-brand .slash { color: var(--green); text-shadow: var(--glow-green); }
+
+    .navbar-default .navbar-nav > li > a {
+      color: var(--text-2) !important;
+      font-family: var(--ui) !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      letter-spacing: 1.5px !important;
+      text-transform: uppercase !important;
+      padding: 24px 18px !important;
+      line-height: 24px !important;
+      transition: color 0.12s;
+    }
+    .navbar-default .navbar-nav > li > a:hover { color: var(--cyan) !important; background: transparent !important; }
+    .navbar-default .navbar-nav > .active > a,
+    .navbar-default .navbar-nav > .active > a:focus,
+    .navbar-default .navbar-nav > .active > a:hover {
+      background: transparent !important; color: var(--cyan) !important;
+      border-bottom: 2px solid var(--cyan) !important;
+    }
+    .navbar-default .navbar-nav > .open > a { background: var(--bg-raised) !important; color: var(--cyan) !important; }
+    .navbar-toggle {
+      border: 1px solid var(--border-hi) !important;
+      margin-top: 18px !important;
+    }
+    .navbar-toggle .icon-bar { background: var(--text-2) !important; }
+    .navbar-default .navbar-collapse { border-color: var(--border) !important; }
+
+    .dropdown-menu {
+      background: var(--bg-card) !important;
+      border: 1px solid var(--border-hi) !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7) !important;
+      border-radius: 3px !important;
+      padding: 4px 0 !important;
+    }
+    .dropdown-menu > li > a {
+      color: var(--text-2) !important;
+      font-family: var(--ui) !important; font-size: 12px !important;
+      font-weight: 700 !important; text-transform: uppercase !important;
+      letter-spacing: 1.5px !important; padding: 9px 18px !important;
+    }
+    .dropdown-menu > li > a:hover { background: var(--cyan-dark) !important; color: var(--cyan) !important; }
+
+    /* ── Layout ── */
+    #main-wrapper { padding-top: 72px; }
+    .container-fluid { padding: 28px 32px !important; }
+
+    /* ── Tables ── */
+    .table { color: var(--text-1) !important; border-collapse: collapse; }
+    .table > thead > tr > th {
+      background: rgba(212,130,42,0.04) !important;
+      color: var(--text-2) !important;
+      border-bottom: 1px solid var(--border-hi) !important;
+      border-top: none !important;
+      font-family: var(--ui) !important; font-size: 11px !important;
+      font-weight: 700 !important; letter-spacing: 2px !important;
+      text-transform: uppercase !important; padding: 10px 14px !important;
+    }
+    .table > tbody > tr > td {
+      border-top: 1px solid var(--border) !important;
+      padding: 10px 14px !important; vertical-align: middle !important;
+    }
+    .table-striped > tbody > tr:nth-of-type(odd)  { background: rgba(212,130,42,0.018) !important; }
+    .table-striped > tbody > tr:nth-of-type(even) { background: transparent !important; }
+    .table-hover > tbody > tr:hover { background: var(--bg-hover) !important; }
+    .table-bordered, .table-bordered > tbody > tr > td,
+    .table-bordered > thead > tr > th { border-color: var(--border) !important; }
+
+    /* ── Panel ── */
+    .panel { background: var(--bg-card) !important; border: 1px solid var(--border-hi) !important; border-radius: 3px !important; box-shadow: none !important; }
+    .panel-heading {
+      background: var(--bg-raised) !important; border-bottom: 1px solid var(--border-hi) !important;
+      color: var(--text-2) !important; font-family: var(--ui) !important;
+      font-size: 11px !important; font-weight: 700 !important;
+      letter-spacing: 2px !important; text-transform: uppercase !important;
+      padding: 10px 16px !important; border-radius: 3px 3px 0 0 !important;
+    }
+    .panel-body { background: var(--bg-card) !important; }
+
+    /* ── Buttons ── */
+    .btn {
+      font-family: var(--ui) !important; font-size: 11px !important;
+      font-weight: 700 !important; letter-spacing: 1.5px !important;
+      text-transform: uppercase !important; border-radius: 2px !important;
+      transition: all 0.12s !important;
+    }
+    .btn-default { background: var(--bg-raised) !important; border: 1px solid var(--border-hi) !important; color: var(--text-2) !important; }
+    .btn-default:hover { background: var(--bg-hover) !important; color: var(--text-1) !important; }
+    .btn-primary { background: rgba(212,130,42,0.08) !important; border: 1px solid var(--cyan-dim) !important; color: var(--cyan) !important; }
+    .btn-primary:hover { background: var(--cyan-dark) !important; box-shadow: var(--glow-cyan) !important; }
+    .btn-danger  { background: rgba(255,64,96,0.08) !important; border: 1px solid var(--red-dim) !important; color: var(--red) !important; }
+    .btn-danger:hover  { background: var(--red-dark) !important; box-shadow: var(--glow-red) !important; }
+    .btn-success { background: var(--green-dark) !important; border: 1px solid var(--green-dim) !important; color: var(--green) !important; }
+    .btn-warning { background: var(--yellow-dark) !important; border: 1px solid var(--yellow) !important; color: var(--yellow) !important; }
+
+    /* ── Forms ── */
+    .form-control {
+      background: var(--bg-input) !important; border: 1px solid var(--border-hi) !important;
+      color: var(--text-1) !important; border-radius: 2px !important;
+      font-family: var(--mono) !important; font-size: 13px !important; font-weight: 600 !important;
+    }
+    .form-control:focus { border-color: var(--cyan-dim) !important; box-shadow: 0 0 0 2px rgba(212,130,42,0.15) !important; }
+    input::placeholder, textarea::placeholder { color: var(--text-3) !important; }
+    select.form-control option { background: var(--bg-card); color: var(--text-1); }
+    .form-group label { color: var(--text-2) !important; font-family: var(--ui) !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+
+    /* ── Labels ── */
+    .label { border-radius: 2px !important; font-family: var(--mono) !important; font-size: 10px !important; font-weight: 700 !important; letter-spacing: 1px !important; padding: 2px 7px !important; }
+    .label-default { background: var(--bg-raised) !important; color: var(--text-2) !important; border: 1px solid var(--border-hi) !important; }
+    .label-info    { background: var(--cyan-dark) !important; color: var(--cyan) !important; border: 1px solid rgba(212,130,42,0.3) !important; }
+    .label-success { background: var(--green-dark) !important; color: var(--green) !important; border: 1px solid var(--green-dim) !important; }
+    .label-danger  { background: var(--red-dark) !important; color: var(--red) !important; border: 1px solid var(--red-dim) !important; }
+    .label-warning { background: var(--yellow-dark) !important; color: var(--yellow) !important; border: 1px solid rgba(255,215,64,0.3) !important; }
+    .badge { background: var(--bg-raised) !important; color: var(--text-2) !important; font-family: var(--mono) !important; }
+
+    /* ── Pagination ── */
+    .pagination > li > a, .pagination > li > span { background: var(--bg-card) !important; border-color: var(--border-hi) !important; color: var(--text-2) !important; font-family: var(--mono) !important; border-radius: 2px !important; }
+    .pagination > li > a:hover { background: var(--bg-hover) !important; color: var(--green) !important; }
+    .pagination > .active > a { background: var(--green-dark) !important; border-color: var(--green-dim) !important; color: var(--green) !important; font-weight: 700 !important; }
+    .pagination > .disabled > a { opacity: 0.3 !important; }
+
+    /* ── Alerts ── */
+    .alert { border-radius: 2px !important; border-left: 3px solid !important; border-top: none !important; border-right: 1px solid !important; border-bottom: 1px solid !important; font-family: var(--mono) !important; font-size: 12px !important; font-weight: 600 !important; }
+    .alert-info    { background: rgba(48,209,88,0.06) !important; border-color: var(--green-dim) !important; color: var(--green) !important; }
+    .alert-success { background: rgba(48,209,88,0.06) !important; border-color: var(--green-dim) !important; color: var(--green) !important; }
+    .alert-danger  { background: rgba(255,69,58,0.06) !important; border-color: var(--red-dim) !important; color: var(--red) !important; }
+    .alert-warning { background: rgba(255,214,10,0.06) !important; border-color: var(--yellow) !important; color: var(--yellow) !important; }
+
+    /* ── Breadcrumb ── */
+    .breadcrumb { background: transparent !important; padding: 4px 0 !important; margin: 0 0 16px !important; }
+    .breadcrumb > li + li::before { color: var(--text-3) !important; content: "/ " !important; }
+    .breadcrumb > li > a { color: var(--text-2) !important; font-family: var(--mono) !important; font-size: 11px !important; }
+    .breadcrumb > .active { color: var(--green) !important; font-family: var(--mono) !important; font-size: 11px !important; font-weight: 700 !important; }
+
+    /* ── Well / Select2 ── */
+    .well { background: var(--bg-card) !important; border: 1px solid var(--border-hi) !important; border-radius: 2px !important; }
+    .select2-container .select2-choice { background: var(--bg-input) !important; border-color: var(--border-hi) !important; color: var(--text-1) !important; border-radius: 2px !important; }
+    .select2-drop { background: var(--bg-card) !important; border-color: var(--border-hi) !important; }
+    .select2-results .select2-result-label { color: var(--text-1) !important; font-family: var(--mono) !important; font-size: 12px !important; }
+    .select2-results .select2-highlighted { background: var(--green-dark) !important; color: var(--green) !important; }
+
+    /* ── Misc ── */
+    hr { border-color: var(--border-hi) !important; }
+    a { color: var(--green) !important; font-weight: 600; }
+    a:hover { color: #fff !important; text-decoration: none !important; }
+    .text-muted { color: var(--text-3) !important; }
+    .nav-pills > li > a { color: var(--text-2) !important; border-radius: 2px !important; font-family: var(--ui) !important; font-size: 11px !important; font-weight: 700 !important; letter-spacing: 1px !important; text-transform: uppercase !important; }
+    .nav-pills > li > a:hover { background: var(--bg-raised) !important; color: var(--green) !important; }
+    .nav-pills > li.active > a { background: var(--green-dark) !important; color: var(--green) !important; border: 1px solid rgba(48,209,88,0.25) !important; font-weight: 700 !important; }
+
+    /* ── Status dot ── */
+    .c2-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .c2-dot.online { background: var(--green); box-shadow: var(--glow-green); animation: c2-pulse 2s infinite; }
+    .c2-dot.offline { background: var(--text-3); }
+    @keyframes c2-pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+    .mono { font-family: var(--mono) !important; }
+  </style>
+  {% endblock %}
+  {% block head_js %}{% endblock %}
+  {% endblock %}
+</head>
+<body class="{% block body_class %}admin{% endblock %}">
+
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+  <div style="display:flex;align-items:center;height:72px;padding:0 28px;position:relative;">
+
+    <!-- Sol: Nav linkleri -->
+    {% block main_menu %}
+    <div style="display:flex;align-items:center;gap:4px;z-index:1;">
+      {% for view in admin_view.admin.menu() %}
+        {% if view.is_accessible() and view.is_visible() %}
+          {% if view.is_category() %}
+            <div style="position:relative;" class="c2-dropdown">
+              <a href="#"
+                 onclick="var m=this.nextElementSibling;m.style.display=m.style.display==='block'?'none':'block';return false;"
+                 style="display:flex;align-items:center;gap:6px;padding:8px 18px;border-radius:3px;
+                        font-family:var(--ui);font-size:15px;font-weight:700;letter-spacing:1px;
+                        text-transform:uppercase;color:var(--text-2);text-decoration:none;
+                        border:1px solid transparent;transition:all 0.12s;
+                        {% if view.is_active(admin_view) %}color:var(--green);border-color:rgba(48,209,88,0.2);background:rgba(48,209,88,0.04);{% endif %}">
+                {{ view.name }} ▾
+              </a>
+              <div style="display:none;position:absolute;top:calc(100% + 4px);left:0;
+                          background:var(--bg-card);border:1px solid var(--border-hi);
+                          border-radius:3px;min-width:160px;z-index:999;
+                          box-shadow:0 8px 32px rgba(0,0,0,0.7);">
+                {% for subview in view.get_children() %}
+                <a href="{{ subview.get_url() }}"
+                   style="display:block;padding:12px 18px;font-family:var(--ui);font-size:14px;
+                          font-weight:700;letter-spacing:1px;text-transform:uppercase;
+                          color:var(--text-2);text-decoration:none;
+                          {% if subview.is_active(admin_view) %}color:var(--green);background:var(--green-dark);font-weight:700;{% endif %}">
+                  {{ subview.name }}
+                </a>
+                {% endfor %}
+              </div>
+            </div>
+          {% else %}
+            <a href="{{ view.get_url() }}"
+               style="display:flex;align-items:center;padding:8px 18px;border-radius:3px;
+                      font-family:var(--ui);font-size:15px;font-weight:700;letter-spacing:1px;
+                      text-transform:uppercase;text-decoration:none;transition:all 0.12s;
+                      {% if view.is_active(admin_view) %}
+                        color:var(--green);border:1px solid rgba(48,209,88,0.2);background:rgba(48,209,88,0.04);font-weight:700;
+                      {% else %}
+                        color:var(--text-2);border:1px solid transparent;
+                      {% endif %}">
+              {{ view.name }}
+            </a>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endblock %}
+
+    <!-- Orta: Brand -->
+    {% block brand_text %}
+    <a href="{{ url_for('admin.index') }}"
+       style="position:absolute;left:50%;transform:translateX(-50%);
+              font-family:var(--display);font-size:21px;font-weight:700;letter-spacing:2px;
+              color:var(--green);text-shadow:var(--glow-green);text-decoration:none;white-space:nowrap;">
+      ISPY<span style="color:var(--cyan);text-shadow:var(--glow-cyan);">/</span>C2
+    </a>
+    {% endblock %}
+
+    <!-- Sağ: Socket durumu + saat -->
+    {% block menu_right %}
+    <div style="margin-left:auto;display:flex;align-items:center;gap:16px;z-index:1;">
+      <div style="display:flex;align-items:center;gap:8px;
+                  padding:8px 16px;border-radius:3px;
+                  border:1px solid var(--border-hi);background:var(--bg-raised);">
+        <span class="c2-dot offline" id="nav-ws-dot" style="width:10px;height:10px;"></span>
+        <span style="font-family:var(--ui);font-size:14px;font-weight:700;
+                     color:var(--text-3);letter-spacing:1px;" id="nav-ws-status">SOCKET OFFLINE</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:14px;font-weight:600;
+                  color:var(--text-3);letter-spacing:1px;" id="nav-clock">
+        ██:██:██ UTC
+      </div>
+    </div>
+    {% endblock %}
+
+    {% block access_control %}{% endblock %}
+  </div>
+</nav>
+
+<div id="main-wrapper">{% block body %}{% endblock %}</div>
+
+<footer style="border-top:1px solid var(--border);padding:18px 32px;
+               display:flex;align-items:center;justify-content:space-between;
+               background:var(--bg-deep);">
+  <span style="font-family:var(--mono);font-size:12px;color:var(--text-3);letter-spacing:1px;">
+    Designed by <span style="color:var(--green);font-weight:700;">sideffect</span>
+  </span>
+  <span style="font-family:var(--mono);font-size:11px;color:var(--text-3);letter-spacing:0.5px;text-align:center;">
+    This tool is built strictly for <span style="color:var(--yellow);">educational purposes</span> and authorized security research only.
+    Unauthorized use against systems you do not own or have explicit permission to test is illegal.
+  </span>
+  <span style="font-family:var(--mono);font-size:12px;color:var(--text-3);letter-spacing:1px;">
+    iSpy C2 &mdash; <span style="color:var(--cyan);">research build</span>
+  </span>
+</footer>
+
+{% block tail_js %}
+<script src="{{ url_for('admin.static', filename='vendor/jquery.min.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='bootstrap/js/bootstrap.min.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='vendor/select2.js') }}"></script>
+<script src="{{ url_for('admin.static', filename='admin/js/bootstrap3/actions.js') }}"></script>
+<script>
+(function tick(){
+  var e=document.getElementById('nav-clock');
+  if(e)e.textContent=new Date().toISOString().slice(11,19)+' UTC';
+  setTimeout(tick,1000);
+})();
+</script>
+{% endblock %}
+</body>
+</html>

